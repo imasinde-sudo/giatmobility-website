@@ -1,0 +1,44 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-giatmobility
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      APP_DIR: giatmobility-website
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          printf 'Host deploy\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  IdentitiesOnly yes\n' \
+            "$DEPLOY_HOST" "$DEPLOY_USER" > ~/.ssh/config
+
+      - name: Sync static site to server
+        run: |
+          ssh deploy "mkdir -p ~/$APP_DIR"
+          rsync -az --delete \
+            --exclude '.git' --exclude '.github' \
+            --exclude 'Giat Mobility Latest Pitch Deck July 2026.pdf' \
+            ./ "deploy:$APP_DIR/"
+
+      - name: Start or update the site
+        run: ssh deploy "cd ~/$APP_DIR && docker compose up -d"
