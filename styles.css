@@ -720,7 +720,7 @@ h1 span,
 
 .team-members {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 13px;
 }
 
@@ -933,10 +933,6 @@ h1 span,
   .header-inner,
   .footer-inner {
     width: min(100% - 44px, 720px);
-  }
-
-  .team-members {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .brand {
